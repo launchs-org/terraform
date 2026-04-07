@@ -29,6 +29,7 @@ variable "vms" {
     gateway      = string
     dns_servers  = list(string)
     dns_domain   = string
+    mtu          = number
   }))
   default = {}
 }

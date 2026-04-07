@@ -13,6 +13,7 @@ vms = {
     gateway      = "10.10.11.254"
     dns_servers  = ["1.1.1.1", "8.8.8.8"]
     dns_domain   = ""
+    mtu          = 1320
   }
   "talos-worker-1" = {
     name         = "talos-worker-1"
@@ -28,6 +29,7 @@ vms = {
     gateway      = "10.10.11.254"
     dns_servers  = ["1.1.1.1", "8.8.8.8"]
     dns_domain   = ""
+    mtu          = 1320
   }
   "talos-worker-2" = {
     name         = "talos-worker-2"
@@ -43,6 +45,7 @@ vms = {
     gateway      = "10.10.11.254"
     dns_servers  = ["1.1.1.1", "8.8.8.8"]
     dns_domain   = ""
+    mtu          = 1320
   }
   "talos-worker-3" = {
     name         = "talos-worker-3"
@@ -58,6 +61,7 @@ vms = {
     gateway      = "10.10.11.254"
     dns_servers  = ["1.1.1.1", "8.8.8.8"]
     dns_domain   = ""
+    mtu          = 1320
   }
   "talos-worker-4" = {
     name         = "talos-worker-4"
@@ -73,5 +77,6 @@ vms = {
     gateway      = "10.10.11.254"
     dns_servers  = ["1.1.1.1", "8.8.8.8"]
     dns_domain   = ""
+    mtu          = 1320
   }
 }

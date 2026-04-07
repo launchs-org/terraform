@@ -36,6 +36,7 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
   # Network Adapter
   network_device {
     bridge = each.value.network_bridge
+    mtu    = each.value.mtu
   }
 
   # Cloud-Init / IP configuration
