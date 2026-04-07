@@ -11,6 +11,8 @@ vms = {
     network_bridge = "evnet1"
     ip_address   = "10.10.11.10/24"
     gateway      = "10.10.11.254"
+    dns_servers  = ["1.1.1.1", "8.8.8.8"]
+    dns_domain   = ""
   }
   "talos-worker-1" = {
     name         = "talos-worker-1"
@@ -24,6 +26,8 @@ vms = {
     network_bridge = "evnet1"
     ip_address   = "10.10.11.11/24"
     gateway      = "10.10.11.254"
+    dns_servers  = ["1.1.1.1", "8.8.8.8"]
+    dns_domain   = ""
   }
   "talos-worker-2" = {
     name         = "talos-worker-2"
@@ -37,6 +41,8 @@ vms = {
     network_bridge = "evnet1"
     ip_address   = "10.10.11.12/24"
     gateway      = "10.10.11.254"
+    dns_servers  = ["1.1.1.1", "8.8.8.8"]
+    dns_domain   = ""
   }
   "talos-worker-3" = {
     name         = "talos-worker-3"
@@ -50,6 +56,8 @@ vms = {
     network_bridge = "evnet1"
     ip_address   = "10.10.11.13/24"
     gateway      = "10.10.11.254"
+    dns_servers  = ["1.1.1.1", "8.8.8.8"]
+    dns_domain   = ""
   }
   "talos-worker-4" = {
     name         = "talos-worker-4"
@@ -63,5 +71,7 @@ vms = {
     network_bridge = "evnet1"
     ip_address   = "10.10.11.14/24"
     gateway      = "10.10.11.254"
+    dns_servers  = ["1.1.1.1", "8.8.8.8"]
+    dns_domain   = ""
   }
 }

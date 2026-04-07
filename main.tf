@@ -42,6 +42,10 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
   initialization {
     datastore_id = each.value.datastore_id
     interface    = "ide3"
+    dns {
+      servers = each.value.dns_servers
+      domain  = each.value.dns_domain
+    }
     ip_config {
       ipv4 {
         address = each.value.ip_address

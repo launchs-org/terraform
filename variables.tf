@@ -27,6 +27,8 @@ variable "vms" {
     network_bridge = string
     ip_address   = string # e.g. "192.168.1.10/24"
     gateway      = string
+    dns_servers  = list(string)
+    dns_domain   = string
   }))
   default = {}
 }
