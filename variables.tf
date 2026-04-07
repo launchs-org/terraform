@@ -1,9 +1,11 @@
 variable "proxmox_endpoint" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "proxmox_api_token" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 variable "proxmox_insecure" {

@@ -9,7 +9,7 @@
 .terraform.lock.hcl
 
 # Sensitive variable files
-secret.tfvars
+*.auto.tfvars
 # *.tfvars # Uncomment if you want to ignore all variable files
 
 # Crash logs
