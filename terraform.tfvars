@@ -9,7 +9,7 @@ vms = {
     disk_size    = 32
     image_id     = "local:iso/talos-linux-1123.iso"
     network_bridge = "evnet1"
-    ip_address   = "10.10.11.8/24"
+    ip_address   = "10.10.11.10/24"
     gateway      = "10.10.11.254"
   }
   "talos-worker-1" = {
@@ -22,7 +22,7 @@ vms = {
     disk_size    = 120
     image_id     = "local:iso/talos-linux-1123.iso"
     network_bridge = "evnet1"
-    ip_address   = "10.10.11.10/24"
+    ip_address   = "10.10.11.11/24"
     gateway      = "10.10.11.254"
   }
   "talos-worker-2" = {
@@ -35,7 +35,7 @@ vms = {
     disk_size    = 120
     image_id     = "local:iso/talos-linux-1123.iso"
     network_bridge = "evnet1"
-    ip_address   = "10.10.11.11/24"
+    ip_address   = "10.10.11.12/24"
     gateway      = "10.10.11.254"
   }
   "talos-worker-3" = {
@@ -48,7 +48,7 @@ vms = {
     disk_size    = 120
     image_id     = "local:iso/talos-linux-1123.iso"
     network_bridge = "evnet1"
-    ip_address   = "10.10.11.12/24"
+    ip_address   = "10.10.11.13/24"
     gateway      = "10.10.11.254"
   }
   "talos-worker-4" = {
@@ -61,7 +61,7 @@ vms = {
     disk_size    = 120
     image_id     = "local:iso/talos-linux-1123.iso"
     network_bridge = "evnet1"
-    ip_address   = "10.10.11.13/24"
+    ip_address   = "10.10.11.14/24"
     gateway      = "10.10.11.254"
   }
 }

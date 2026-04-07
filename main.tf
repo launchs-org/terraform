@@ -24,7 +24,6 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
     datastore_id = each.value.datastore_id
     interface    = "virtio0"
     iothread     = true
-    discard      = "on"
     size         = each.value.disk_size
   }
 
@@ -33,8 +32,6 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
     file_id   = each.value.image_id
     interface = "ide2"
   }
-
-  boot_order = ["ide2", "virtio0", "net0"]
 
   # Network Adapter
   network_device {
