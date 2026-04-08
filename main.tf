@@ -19,6 +19,10 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
     type  = "host"
   }
 
+  agent {
+    enabled = true
+  }
+
   memory {
     dedicated = each.value.memory
     floating  = 0 # Disable ballooning as Talos doesn't support memory hotplug
