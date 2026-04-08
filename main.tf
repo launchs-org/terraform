@@ -57,6 +57,9 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
     type = "l26"
   }
 
+  # これがないと再起動時にめんどくさくなる
+  boot_order = [ "scsi0","ide2","net0" ]
+
   # Cloud-Init device for passing network config or using NoCloud datasource
   initialization {
     datastore_id = each.value.datastore_id
