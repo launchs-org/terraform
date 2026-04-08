@@ -5,10 +5,14 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
   node_name   = each.value.node_name
   vm_id       = each.value.vm_id
   description = "Managed by Terraform"
-  tags        = ["terraform"]
+  tags        = ["terraform", "talos"]
 
   # Stop on deletion if agent is not there
   stop_on_destroy = false
+
+  bios    = "ovmf"
+  machine = "q35"
+  scsi_hardware = "virtio-scsi-pci"
 
   cpu {
     cores = each.value.cpu_cores
@@ -17,14 +21,23 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
 
   memory {
     dedicated = each.value.memory
+    floating  = 0 # Disable ballooning as Talos doesn't support memory hotplug
   }
 
-  # Disk configuration (Empty disk for OS installation)
+  # Disk configuration
   disk {
     datastore_id = each.value.datastore_id
-    interface    = "virtio0"
-    iothread     = true
+    interface    = "scsi0"
+    iothread     = false
     size         = each.value.disk_size
+    file_format  = "raw"
+  }
+
+  # EFI Disk (Required for OVMF)
+  efi_disk {
+    datastore_id = each.value.datastore_id
+    file_format  = "raw"
+    type         = "4m"
   }
 
   # CD-ROM configuration (ISO image)
@@ -36,10 +49,15 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
   # Network Adapter
   network_device {
     bridge = each.value.network_bridge
+    model  = "virtio"
     mtu    = each.value.mtu
   }
 
-  # Cloud-Init / IP configuration
+  operating_system {
+    type = "l26"
+  }
+
+  # Cloud-Init device for passing network config or using NoCloud datasource
   initialization {
     datastore_id = each.value.datastore_id
     interface    = "ide3"
