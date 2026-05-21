@@ -1,82 +1,46 @@
-resource "proxmox_virtual_environment_vm" "virtual_machines" {
-  for_each = var.vms
-
-  name        = each.value.name
-  node_name   = each.value.node_name
-  vm_id       = each.value.vm_id
-  description = "Managed by Terraform"
-  tags        = ["terraform", "talos"]
-
-  # Stop on deletion if agent is not there
-  stop_on_destroy = false
-
-  bios    = "ovmf"
-  machine = "q35"
-  scsi_hardware = "virtio-scsi-pci"
-
-  cpu {
-    cores = each.value.cpu_cores
-    type  = "host"
-  }
-
-  agent {
-    enabled = true
-  }
-
-  memory {
-    dedicated = each.value.memory
-    floating  = 0 # Disable ballooning as Talos doesn't support memory hotplug
-  }
-
-  # Disk configuration
-  disk {
-    datastore_id = each.value.datastore_id
-    interface    = "scsi0"
-    iothread     = false
-    size         = each.value.disk_size
-    file_format  = "raw"
-  }
-
-  # EFI Disk (Required for OVMF)
-  efi_disk {
-    datastore_id = each.value.datastore_id
-    file_format  = "raw"
-    type         = "4m"
-  }
-
-  # CD-ROM configuration (ISO image)
-  cdrom {
-    file_id   = each.value.image_id
-    interface = "ide2"
-  }
-
-  # Network Adapter
-  network_device {
-    bridge = each.value.network_bridge
-    model  = "virtio"
-    mtu    = each.value.mtu
-  }
-
-  operating_system {
-    type = "l26"
-  }
-
-  # これがないと再起動時にめんどくさくなる
-  boot_order = [ "scsi0","ide2","net0" ]
-
-  # Cloud-Init device for passing network config or using NoCloud datasource
-  initialization {
-    datastore_id = each.value.datastore_id
-    interface    = "ide3"
-    dns {
-      servers = each.value.dns_servers
-      domain  = each.value.dns_domain
+terraform {
+  required_providers {
+    proxmox = {
+      source  = "bpg/proxmox"
+      version = "~> 0.75.0"
     }
-    ip_config {
-      ipv4 {
-        address = each.value.ip_address
-        gateway = each.value.gateway
-      }
+    talos = {
+      source  = "siderolabs/talos"
+      version = "~> 0.7.1"
     }
   }
+}
+
+provider "proxmox" {
+  endpoint = "https://192.168.10.105:8006/"
+  insecure = true
+}
+
+
+module "talos" {
+    source  = "bbtechsys/talos/proxmox"
+    version = "0.1.5"
+    talos_cluster_name = "k8s-cluster"
+    talos_version = "1.9.5"
+    control_nodes = {
+        "talos-master-0" = "ubuntu1"
+    }
+    worker_nodes = {
+        "talos-worker-0" = "ubuntu1"
+        "talos-worker-1" = "ubuntu1"
+        "talos-worker-2" = "ubuntu2"
+        "talos-worker-3" = "ubuntu2"
+    }
+}
+
+output "talos_config" {
+    description = "Talos configuration file"
+    value       = module.talos.talos_config
+    sensitive   = true
+}
+
+output "kubeconfig" {
+    description = "Kubeconfig file"
+    value       = module.talos.kubeconfig
+    sensitive   = true
 }
