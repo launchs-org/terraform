@@ -7,8 +7,9 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
   description = "Managed by Terraform"
   tags        = ["terraform", "talos"]
 
-  # Stop on deletion if agent is not there
-  stop_on_destroy = false
+  # Stop on deletion — falls back to forced power-off if ACPI shutdown stalls
+  stop_on_destroy = true
+  timeout_stop_vm = 30 # seconds before forced power-off during destroy
 
   bios    = "ovmf"
   machine = "q35"
@@ -21,6 +22,7 @@ resource "proxmox_virtual_environment_vm" "virtual_machines" {
 
   agent {
     enabled = true
+    timeout = "15s" # wait for agent response before forced stop
   }
 
   memory {
