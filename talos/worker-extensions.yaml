@@ -1,0 +1,19 @@
+machine:
+  install:
+    # iscsi-tools / util-linux-tools(Longhorn)と gvisor を含む Image Factory のイメージ
+    image: factory.talos.dev/installer/22b866b9250c290037b9e8f68d2bdd3071f7cf3553161e7f78532e91708cc628:v1.13.2
+  kubelet:
+    extraMounts:
+      # Longhorn のデータ置き場。kubelet から rshared で見えるようにする
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/lib/longhorn
+        options: [bind, rshared, rw]
+  files:
+    # gVisor(runsc)を containerd のランタイムとして登録する。RuntimeClass "gvisor" から使う
+    - path: /etc/cri/conf.d/20-customization.part
+      op: create
+      permissions: 0o644
+      content: |
+        [plugins."io.containerd.cri.v1.runtime".containerd.runtimes.runsc]
+          runtime_type = "io.containerd.runsc.v1"

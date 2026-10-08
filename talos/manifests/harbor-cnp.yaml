@@ -1,0 +1,18 @@
+# ノード(kubelet/containerd)からの Harbor への pull を許可する。
+# manifest の harbor-combined-policy は旧環境のノード網(10.10.11.0/24)しか許可していない
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-node-image-pull
+  namespace: main-harbor
+spec:
+  endpointSelector:
+    matchLabels:
+      app: harbor
+      component: nginx
+  ingress:
+    - fromEntities: [host, remote-node]
+      toPorts:
+        - ports:
+            - {port: "8443", protocol: TCP}
+            - {port: "8080", protocol: TCP}

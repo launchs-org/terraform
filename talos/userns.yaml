@@ -1,0 +1,4 @@
+machine:
+  sysctls:
+    # rootless buildkit(railpack ビルド)が user namespace を作るために必要。Talos の既定は 0
+    user.max_user_namespaces: "11255"
