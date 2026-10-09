@@ -34,7 +34,7 @@ curl -X POST --data-binary @schematic.yaml https://factory.talos.dev/schematics 
 
 ### 2. worker に適用する(再起動あり)
 
-`talos/worker-extensions.yaml` を `--mode staged` で入れて、`talosctl upgrade --image` の再起動で反映する(手順は [talos-k8s.md](talos-k8s.md) のローリング更新)。
+新規ノードでは `talos/worker-extensions.yaml` を Terraform のパッチとして使う。既存ノードの更新は、[talos-k8s.md](talos-k8s.md) の「ノードの更新」に従い、`install.image` だけを変える(設定を丸ごと重ねると二重定義でブートが止まる)。
 適用後、`talosctl get extensions` に `iscsi-tools` / `util-linux-tools` / `gvisor` が出て、ノードの `/usr/local/bin` に `runsc` と `containerd-shim-runsc-v1` がある。
 
 ### 3. RuntimeClass を作る

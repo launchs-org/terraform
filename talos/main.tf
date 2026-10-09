@@ -52,7 +52,7 @@ data "talos_machine_configuration" "this" {
       }
     }),
     each.value.role == "worker" ? file("${path.module}/userns.yaml") : "", # rootless buildkit 用
-    each.value.role == "worker" ? file("${path.module}/worker-extensions.yaml") : "", # Longhorn / gVisor 拡張入りイメージ
+    each.value.role == "worker" ? file("${path.module}/worker-extensions.yaml") : file("${path.module}/controlplane-extensions.yaml"), # 拡張入りイメージ(worker: Longhorn / gVisor / guest-agent、controlplane: guest-agent)
     each.value.role == "worker" ? file("${path.module}/harbor-registry.yaml") : "", # Harbor の名前解決と CA の信頼
     file("${path.module}/firewall.yaml"), # ingress は既定でブロックし、必要な通信だけ許可
     # Talos 1.12 以降は、ホスト名を v1alpha1 ではなく HostnameConfig で指定する

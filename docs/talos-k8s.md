@@ -45,7 +45,8 @@ VM は Proxmox の HA・複製には登録しません(k8s 側で冗長化する
 | `talos/main.tf` | 全体の定義。CNI なし・kube-proxy 無効・システムディスク暗号化(LUKS2)を共通で入れる |
 | `talos/firewall.yaml` | Talos の ingress ファイアウォール。既定でブロックし、必要な通信だけ許可する |
 | `talos/userns.yaml` | `user.max_user_namespaces`(rootless buildkit 用。Talos の既定は 0) |
-| `talos/worker-extensions.yaml` | 拡張入りインストーラ、Longhorn のマウント、gVisor の登録 |
+| `talos/worker-extensions.yaml` | worker 用: 拡張入りインストーラ(Longhorn / gVisor / qemu-guest-agent)、Longhorn のマウント、gVisor の登録 |
+| `talos/controlplane-extensions.yaml` | master 用: qemu-guest-agent だけを含むインストーラ |
 | `talos/harbor-registry.yaml` | ノードから Harbor を引くための hosts と CA の信頼 |
 
 ### Talos 1.13 での注意
@@ -66,20 +67,47 @@ ingress を既定でブロックし、次だけ許可する。変更時は `talo
 | Cilium(4240/4244/4245 TCP、8472/51871 UDP) | クラスタのノード |
 | ICMP | 学校 LAN |
 
-## ローリング更新(worker)
+## ノードの更新(拡張入りイメージへの入れ替え)
 
-拡張入りイメージへの更新など、再起動を伴う変更は worker を 1 台ずつ行う。
+拡張(Longhorn / gVisor / qemu-guest-agent)を含むイメージへの更新など、再起動を伴う変更は **1 台ずつ** 行う。
+worker は drain してから、master は最後に行う(master は 1 台なので、再起動中は数分間 k8s の API が止まる。動いている Pod は影響を受けない)。
+
+### 手順
 
 ```bash
-IMG=factory.talos.dev/installer/<schematic-id>:v1.13.2
+# 1. 作業の前に、クラスタが健全であることを確認する(全 Pod が Running、PostgreSQL が 3 台揃っている)
+# 2. worker は drain する
 kubectl drain <node> --ignore-daemonsets --delete-emptydir-data --timeout=180s
-talosctl -n <ip> patch mc -p @worker-extensions.yaml --mode staged
-talosctl -n <ip> upgrade --image "$IMG" --wait --timeout 8m
+# 3. 更新して、稼働中のスキーマティックで検証する(scripts/talos-upgrade.sh が検証と install.image の整合までを行う)
+scripts/talos-upgrade.sh <ノード IP> factory.talos.dev/installer/<schematic-id>:v1.13.2
 kubectl uncordon <node>
-# 次のノードへ進む前に、全 Pod が Running で、PostgreSQL が 3 台揃っていることを確認する
+# 4. 次のノードへ進む前に、全 Pod が Running で、PostgreSQL が 3 台揃っていることを確認する
 ```
 
 PostgreSQL の master が載っているノードを更新すると、Patroni のフェイルオーバーが起きる(検証で確認済み)。
+worker に固定された `local-path` のボリュームを使う Pod(Harbor の DB など)は、そのノードの更新中は Pending になる(ノードが戻れば復帰する。異常ではない)。
+
+### 守ること(今回の失敗から)
+
+1. **既存ノードに `worker-extensions.yaml` を丸ごと `talosctl patch mc` しない**。`machine.files` と `kubelet.extraMounts` のリストが二重になり、`EtcFileSpecs ... already exists` でブートが止まる(kubelet が起動せず、ノードが NotReady のまま)。
+   画像だけ変えるなら `install.image` のみのパッチを使う(`scripts/talos-upgrade.sh` がそうしている)。
+   二重になってしまった場合は、`EDITOR` に重複ブロックを取り除くスクリプトを指定して `talosctl edit mc` で直せる(JSON パッチは、マルチドキュメントの設定には使えない)。
+2. **`talosctl upgrade` の「成功らしい出力」を信用しない**。ブート失敗でロールバックしても、それらしい出力で終わることがある。必ず `talosctl get extensions` の `schematic` で、稼働中のイメージを検証する。
+3. **作業は 1 つのセッションだけで行う**。複数の端末・セッションが同じノードを同時に操作すると、drain や VM の停止・起動が二重に走る。
+
+### qemu-guest-agent(Proxmox から VM の IP などを見る)
+
+Talos の拡張 `siderolabs/qemu-guest-agent` を、イメージに含める(worker は `worker-extensions.yaml`、master は `controlplane-extensions.yaml`)。
+さらに、Proxmox の VM に **ゲストエージェントのデバイスを追加する**必要がある。
+
+```bash
+qm set <vmid> --agent enabled=1      # 設定を変える。デバイスは VM を起動し直すまで追加されない
+```
+
+- `talosctl upgrade` が再起動するのは **ゲスト OS だけ**で、QEMU のプロセス(VM そのもの)は起動し直されない。
+  そのため、拡張を入れただけでは Proxmox からエージェントは見えない。**VM を一度停止して起動し直す**(`qm shutdown` → `qm start`)。
+- 先に `qm set --agent enabled=1` を入れてから `talosctl upgrade` と VM の停止・起動を行えば、エージェントの応答まで確認できる(`qm agent <vmid> ping`)。
+- 起動直後は、DHCP の一時的な IP が一瞬表示されることがある。固定 IP に落ち着くのを待ってから判断する。
 
 ## Longhorn
 
