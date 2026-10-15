@@ -124,7 +124,13 @@ qm set <vmid> --agent enabled=1      # 設定を変える。デバイスは VM �
   - `harbor.main-harbor` を Harbor の ClusterIP に固定する hosts エントリ。
   - Harbor の自己署名 CA の信頼(**証明書の検証は無効にしない**)。
 - ノードから Harbor への通信は、`talos/manifests/harbor-cnp.yaml`(CiliumNetworkPolicy)で、nginx の 8443/8080 だけ許可する。`manifest` の `harbor-combined-policy` は旧環境のノード網(`10.10.11.0/24`)しか許可していない。
-- Harbor の証明書の期限は発行から 1 年。期限が切れると、ノードの CA 信頼とアプリからの接続が壊れるので、更新時は CA の再取得と Talos の設定の更新が必要。
+- Harbor の証明書は、有効期間 **100 年**(2126-09-21 まで)の自前の CA と証明書を使う(Helm の自動生成は 1 年で切れるため。2026-10-15 に交換)。
+  - サーバー証明書は Secret `harbor-tls`(`tls.crt` / `tls.key` / `ca.crt`)、トークン署名用は Secret `harbor-token-cert`(`tls.crt` / `tls.key`)。Helm の値は `expose.tls.certSource=secret`、`expose.tls.secret.secretName=harbor-tls`、`caSecretName=harbor-tls`、`core.secretName=harbor-token-cert`。
+  - **トークン署名の鍵は、PKCS#1(`BEGIN RSA PRIVATE KEY`)形式にする**。OpenSSL 3 の `genrsa` の既定(PKCS#8、`BEGIN PRIVATE KEY`)だと、core が `unable to get PrivateKey from PEM type: PRIVATE KEY` で、トークンを発行できない(`openssl rsa -traditional` で変換する)。
+  - `certSource=secret` のときは `caSecretName` も必須(なければ、`ca-download` のボリュームが不正で、アップグレードが途中で失敗する)。
+  - ノードは、この CA を `talos/harbor-registry.yaml` の `registries.config.harbor.main-harbor.tls.ca` で信頼する。**交換の順序**: ① 新旧の CA を束ねてノードに適用(`talosctl patch mc --mode no-reboot`。再起動不要)→ ② Harbor の証明書を交換 → ③ ノードの CA を、新しいものだけにする。①を先にすると、切り替え中も、イメージの取得が止まらない。
+  - ビルド Job は、実行時に Harbor から証明書チェーンを取得するため、影響を受けない。controller / handler / watcher / builder の Harbor API は `InsecureSkipVerify` なので、影響を受けない。
+  - CA と鍵の控え(秘密鍵を含む): iot-pve1 の `/root/launchs-work/secrets/harbor-pki-*/`(**git には入れない**)。
 - アプリには admin ではなく、専用のロボットアカウント(システムレベルでプロジェクト作成、全プロジェクトに対して controller と同じ権限)を使う。
 
 ## アプリ(`manifest` の `renew-version`)の差分
